@@ -1,18 +1,3 @@
-const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 10000;
-
-// Простейший маршрут для проверки
-app.get('/', (req, res) => {
-  res.send('Бот работает!');
-});
-
-// Запускаем сервер
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 HTTP сервер запущен на порту ${PORT}`);
-});
-
-
 require('dotenv').config();
 
 const { Bot, GrammyError, HttpError, InputFile } = require('grammy');
@@ -58,7 +43,7 @@ const FAQ_TEXT =
   '📱 *Как с вами связаться?*\n' +
   'По всем вопросам вы можете обратиться к администратору студии:\n' +
   '• Телефон: +7 (953) 096-94-27 (Анна)\n' +
-  '• Время для звонков: ежедневно с 9:00 до 21:00\n\n' +
+  '• Время для звонков: ежедневно с 9:00 до 18:00\n\n' +
   
   '🌐 *Есть ли у вас социальные сети, на которые можно подписаться?*\n' +
   'Да, мы ведем активные сообщества в социальных сетях:\n' +
@@ -196,13 +181,12 @@ async function showTrainingDetails(ctx, trainingKey) {
     return;
   }
 
-  // Сначала отправляем текст (быстро)
+  // Сначала отправляем текст
   await ctx.reply(training.description, {
-    parse_mode: 'Markdown',
-    reply_markup: getTrainingDetailsKeyboard()
+    parse_mode: 'Markdown'
   });
 
-  // Затем отправляем фото (если есть) — не задерживает ответ на callback
+  // Затем отправляем фото (если есть)
   if (training.photo) {
     try {
       await ctx.replyWithPhoto(new InputFile(training.photo), {
@@ -212,6 +196,12 @@ async function showTrainingDetails(ctx, trainingKey) {
       console.error('Ошибка при отправке фото тренировки:', error);
     }
   }
+
+  // ПОСЛЕДНЕЙ отправляем клавиатуру для навигации (чтобы кнопки были под всей информацией)
+  await ctx.reply('📌 *Выберите действие:*', {
+    parse_mode: 'Markdown',
+    reply_markup: getTrainingDetailsKeyboard()
+  });
 }
 
 async function showSpecialTrainingDetails(ctx, specialKey) {
@@ -223,8 +213,7 @@ async function showSpecialTrainingDetails(ctx, specialKey) {
 
   // Сначала текст
   await ctx.reply(training.description, {
-    parse_mode: 'Markdown',
-    reply_markup: getSpecialTrainingDetailsKeyboard()
+    parse_mode: 'Markdown'
   });
 
   // Потом фото
@@ -237,6 +226,12 @@ async function showSpecialTrainingDetails(ctx, specialKey) {
       console.error('Ошибка при отправке фото спецтренировки:', error);
     }
   }
+
+  // ПОСЛЕДНЕЙ отправляем клавиатуру
+  await ctx.reply('📌 *Выберите действие:*', {
+    parse_mode: 'Markdown',
+    reply_markup: getSpecialTrainingDetailsKeyboard()
+  });
 }
 
 async function showTrainerDetails(ctx, trainerKey) {
@@ -248,8 +243,7 @@ async function showTrainerDetails(ctx, trainerKey) {
 
   // Сначала текст
   await ctx.reply(`${trainer.title}\n\n${trainer.description}`, {
-    parse_mode: 'Markdown',
-    reply_markup: getTrainerDetailsKeyboard()
+    parse_mode: 'Markdown'
   });
 
   // Потом фото
@@ -262,6 +256,12 @@ async function showTrainerDetails(ctx, trainerKey) {
       console.error('Ошибка при отправке фото тренера:', error);
     }
   }
+
+  // ПОСЛЕДНЕЙ отправляем клавиатуру
+  await ctx.reply('📌 *Выберите действие:*', {
+    parse_mode: 'Markdown',
+    reply_markup: getTrainerDetailsKeyboard()
+  });
 }
 
 // ==================== КОМАНДЫ ====================
@@ -444,7 +444,7 @@ bot.on('message:photo', async (ctx) => {
   }
 });
 
-// ==================== ОБРАБОТЧИК CALLBACK-ЗАПРОСОВ (ОПТИМИЗИРОВАН) ====================
+// ==================== ОБРАБОТЧИК CALLBACK-ЗАПРОСОВ (БЕЗ ТЕКСТА В ОТВЕТЕ) ====================
 
 bot.on('callback_query:data', async (ctx) => {
   const callbackData = ctx.callbackQuery.data;
@@ -453,7 +453,7 @@ bot.on('callback_query:data', async (ctx) => {
   try {
     // ==================== ОБРАБОТКА ОПЛАТЫ ====================
     if (callbackData === 'payment_next_welcome') {
-      await ctx.answerCallbackQuery();
+      await ctx.answerCallbackQuery(); // Без текста
       await showPaymentStep(ctx, 'step1');
     }
     else if (callbackData.startsWith('payment_next_')) {
@@ -506,57 +506,56 @@ bot.on('callback_query:data', async (ctx) => {
 
     // ==================== ОБРАБОТКА ТРЕНИРОВОК ====================
     else if (callbackData === 'btn_pilates') {
-      await ctx.answerCallbackQuery({ text: '⏳ Загружаем информацию...' });
+      await ctx.answerCallbackQuery();
       await showTrainingDetails(ctx, 'pilates');
     }
     else if (callbackData === 'btn_stretching') {
-      await ctx.answerCallbackQuery({ text: '⏳ Загружаем информацию...' });
+      await ctx.answerCallbackQuery();
       await showTrainingDetails(ctx, 'stretching');
     }
     else if (callbackData === 'btn_step') {
-      await ctx.answerCallbackQuery({ text: '⏳ Загружаем информацию...' });
+      await ctx.answerCallbackQuery();
       await showTrainingDetails(ctx, 'step');
     }
     else if (callbackData === 'btn_functional') {
-      await ctx.answerCallbackQuery({ text: '⏳ Загружаем информацию...' });
+      await ctx.answerCallbackQuery();
       await showTrainingDetails(ctx, 'functional');
     }
 
     // ==================== ОБРАБОТКА СПЕЦТРЕНИРОВОК ====================
     else if (callbackData === 'btn_special_smart_fitness') {
-      await ctx.answerCallbackQuery({ text: '⏳ Загружаем программу...' });
+      await ctx.answerCallbackQuery();
       await showSpecialTrainingDetails(ctx, 'smart_fitness');
     }
     else if (callbackData === 'btn_special_transformation') {
-      await ctx.answerCallbackQuery({ text: '⏳ Загружаем программу...' });
+      await ctx.answerCallbackQuery();
       await showSpecialTrainingDetails(ctx, 'transformation');
     }
 
     // ==================== ОБРАБОТКА ТРЕНЕРОВ ====================
     else if (callbackData === 'btn_trainer_irina') {
-      await ctx.answerCallbackQuery({ text: '⏳ Загружаем профиль тренера...' });
+      await ctx.answerCallbackQuery();
       await showTrainerDetails(ctx, 'irina');
     }
     else if (callbackData === 'btn_trainer_anna') {
-      await ctx.answerCallbackQuery({ text: '⏳ Загружаем профиль тренера...' });
+      await ctx.answerCallbackQuery();
       await showTrainerDetails(ctx, 'anna');
     }
 
-    // ==================== ОБРАБОТКА РАСПИСАНИЯ ====================
-    else if (callbackData === 'refresh_schedule') {
-      await ctx.answerCallbackQuery({ text: '⏳ Обновляем расписание...' });
-      try {
-        const scheduleData = await scheduleManager.getSchedule();
-        const message = scheduleManager.formatSchedule(scheduleData);
-        await ctx.editMessageText(message, { 
-          parse_mode: "Markdown",
-          reply_markup: getScheduleKeyboard()
-        });
-      } catch (error) {
-        console.error('Ошибка обновления расписания:', error);
-        // Не вызываем повторно answerCallbackQuery
-      }
-    }
+    // ==================== ОБРАБОТКА РАСПИСАНИЯ (закомментировано) ====================
+    // else if (callbackData === 'refresh_schedule') {
+    //   await ctx.answerCallbackQuery();
+    //   try {
+    //     const scheduleData = await scheduleManager.getSchedule();
+    //     const message = scheduleManager.formatSchedule(scheduleData);
+    //     await ctx.editMessageText(message, { 
+    //       parse_mode: "Markdown",
+    //       reply_markup: getScheduleKeyboard()
+    //     });
+    //   } catch (error) {
+    //     console.error('Ошибка обновления расписания:', error);
+    //   }
+    // }
 
     // ==================== КНОПКИ ВОЗВРАТА ====================
     else if (callbackData === 'back_to_main_menu' || 
@@ -588,7 +587,7 @@ bot.on('callback_query:data', async (ctx) => {
       });
     }
     else if (callbackData === 'contact_for_booking') {
-      await ctx.answerCallbackQuery({ text: '📞 Контакты администратора' });
+      await ctx.answerCallbackQuery();
       await ctx.reply(
         '📞 *Для записи на специальные тренировки свяжитесь с администратором:*\n\n' +
         '👩‍💼 *Анна*\n' +
@@ -602,9 +601,10 @@ bot.on('callback_query:data', async (ctx) => {
   } catch (error) {
     console.error('Ошибка в обработчике callback:', error);
     try {
-      await ctx.answerCallbackQuery({ text: '❌ Произошла ошибка' });
+      // Пытаемся ответить на callback, если ещё не ответили, но без текста
+      await ctx.answerCallbackQuery();
     } catch (e) {
-      // Игнорируем, если уже отвечали
+      // Игнорируем, если уже отвечали или другая ошибка
     }
   }
 });

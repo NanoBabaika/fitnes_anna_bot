@@ -60,7 +60,6 @@ function getTrainerDetailsKeyboard() {
 // Инлайн клавиатура для расписания
 function getScheduleKeyboard() {
   return new InlineKeyboard()
-    .text('🔄 Обновить', 'refresh_schedule')
     .text('🏠 В главное меню', 'back_to_main_menu');
 }
 
