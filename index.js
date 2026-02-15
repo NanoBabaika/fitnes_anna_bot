@@ -1,17 +1,3 @@
-const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 10000;
-
-// Простейший маршрут для проверки
-app.get('/', (req, res) => {
-  res.send('Бот работает!');
-});
-
-// Запускаем сервер
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 HTTP сервер запущен на порту ${PORT}`);
-});
- 
 require('dotenv').config();
 
 const { Bot, GrammyError, HttpError, InputFile } = require('grammy');
